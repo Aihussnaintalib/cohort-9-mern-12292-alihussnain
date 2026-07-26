@@ -1,8 +1,10 @@
+
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./src/config/db');
 const authRoutes = require('./src/routes/authRoutes');
+const noteRoutes = require('./src/routes/noteRoutes');
 
 dotenv.config();
 
@@ -16,11 +18,14 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/notes', noteRoutes);
+
+// Health check
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Server is running' });
 });
 
-// Start server ONLY after database connects
+// Start server only after database connects
 const startServer = async () => {
   try {
     await connectDB();
