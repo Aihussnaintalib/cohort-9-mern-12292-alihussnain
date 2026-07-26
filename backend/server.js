@@ -5,7 +5,11 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const parsedPort = Number(process.env.PORT);
+const PORT =
+  Number.isInteger(parsedPort) && parsedPort > 0
+    ? parsedPort
+    : 5000;
 
 app.use(cors());
 app.use(express.json());
