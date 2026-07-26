@@ -7,6 +7,24 @@ const validateEmail = (email) => {
   return re.test(email);
 };
 
+// Safe error handler
+const handleError = (res, error) => {
+  console.error(error); // Log original error for debugging
+  
+  // Duplicate key error
+  if (error.code === 11000) {
+    return res.status(409).json({ message: 'User already exists' });
+  }
+  
+  // Validation error
+  if (error.name === 'ValidationError') {
+    return res.status(400).json({ message: 'Validation error' });
+  }
+  
+  // Default server error (no raw error message exposed)
+  return res.status(500).json({ message: 'Internal server error' });
+};
+
 const signup = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -34,11 +52,7 @@ const signup = async (req, res) => {
       user: { id: user._id, name: user.name, email: user.email },
     });
   } catch (error) {
-    // Handle duplicate key error (MongoDB E11000)
-    if (error.code === 11000) {
-      return res.status(409).json({ message: 'User already exists' });
-    }
-    res.status(500).json({ message: error.message });
+    handleError(res, error);
   }
 };
 
@@ -69,13 +83,12 @@ const login = async (req, res) => {
       user: { id: user._id, name: user.name, email: user.email },
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handleError(res, error);
   }
 };
 
 const logout = (req, res) => {
-  // Note: JWT token invalidation is handled client-side
-  // For server-side revocation, we'd need a token blacklist
+  // Token invalidation handled client-side for now
   res.status(200).json({ success: true, message: 'Logged out successfully' });
 };
 
