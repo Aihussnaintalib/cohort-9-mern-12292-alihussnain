@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 
+// Load .env FIRST before importing routes
 dotenv.config();
 
 const connectDB = require('./src/config/db');
@@ -15,14 +16,14 @@ const pinoHttp = require('pino-http');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-
 // CORS configuration
 const corsOptions = {
-  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : ['http://localhost:3000', 'http://localhost:5173'],
+  origin: process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
+    : ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
   optionsSuccessStatus: 200
 };
-
 
 // Middleware
 app.use(cors(corsOptions));
@@ -30,29 +31,36 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(pinoHttp({ logger }));
 
-
+// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/notes', noteRoutes);
 
-
-// Routes
-app.use('/api/auth', authRoutes);
-
-// Test route
+// Health check
 app.get('/api/health', (req, res) => {
   logger.debug('Health check endpoint called');
   res.status(200).json({ status: 'OK', message: 'Server is running' });
 });
 
+// 404 handler for unmatched routes
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: 'Route not found' });
+});
 
+// Error handler (should be last)
 app.use(errorHandler);
 
-
+// Start server - ONLY ONE DECLARATION
 const startServer = async () => {
   try {
     await connectDB();
     const server = app.listen(PORT, () => {
       logger.info(`Server is running on port ${PORT}`);
+    });
+
+    // Handle server errors (port conflict, etc.)
+    server.on('error', (error) => {
+      logger.error(`Server error: ${error.message}`);
+      process.exit(1);
     });
 
     const shutdown = async () => {
@@ -75,19 +83,9 @@ const startServer = async () => {
 
   } catch (error) {
     logger.error(`Failed to start server: ${error.message}`);
-// Start server ONLY after database connects
-const startServer = async () => {
-  try {
-    await connectDB();
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-    });
-  } catch (error) {
-    console.error(`Failed to start server: ${error.message}`);
     process.exit(1);
   }
 };
-
 
 // Only start if this file is run directly
 if (require.main === module) {
