@@ -1,19 +1,7 @@
+
 const Note = require('../models/Note');
 
-// Safe error handler
-const handleError = (res, error) => {
-  console.error(error);
-  
-  if (error.name === 'CastError') {
-    return res.status(400).json({ message: 'Invalid ID format' });
-  }
-  if (error.name === 'ValidationError') {
-    return res.status(400).json({ message: 'Validation error' });
-  }
-  return res.status(500).json({ message: 'Internal server error' });
-};
-
-const createNote = async (req, res) => {
+const createNote = async (req, res, next) => {
   try {
     const { title, content } = req.body;
     
@@ -34,20 +22,22 @@ const createNote = async (req, res) => {
 
     res.status(201).json({ success: true, data: note });
   } catch (error) {
-    handleError(res, error);
+    console.error(error);
+    next(error);
   }
 };
 
-const getNotes = async (req, res) => {
+const getNotes = async (req, res, next) => {
   try {
     const notes = await Note.find({ user: req.user._id }).sort({ createdAt: -1 });
     res.status(200).json({ success: true, count: notes.length, data: notes });
   } catch (error) {
-    handleError(res, error);
+    console.error(error);
+    next(error);
   }
 };
 
-const getNote = async (req, res) => {
+const getNote = async (req, res, next) => {
   try {
     const note = await Note.findById(req.params.id);
     if (!note) {
@@ -58,11 +48,12 @@ const getNote = async (req, res) => {
     }
     res.status(200).json({ success: true, data: note });
   } catch (error) {
-    handleError(res, error);
+    console.error(error);
+    next(error);
   }
 };
 
-const updateNote = async (req, res) => {
+const updateNote = async (req, res, next) => {
   try {
     let note = await Note.findById(req.params.id);
     if (!note) {
@@ -93,11 +84,12 @@ const updateNote = async (req, res) => {
 
     res.status(200).json({ success: true, data: note });
   } catch (error) {
-    handleError(res, error);
+    console.error(error);
+    next(error);
   }
 };
 
-const deleteNote = async (req, res) => {
+const deleteNote = async (req, res, next) => {
   try {
     const note = await Note.findById(req.params.id);
     if (!note) {
@@ -109,7 +101,8 @@ const deleteNote = async (req, res) => {
     await note.deleteOne();
     res.status(200).json({ success: true, message: 'Note deleted successfully' });
   } catch (error) {
-    handleError(res, error);
+    console.error(error);
+    next(error);
   }
 };
 
