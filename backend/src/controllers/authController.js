@@ -2,9 +2,10 @@
 const User = require('../models/User');
 const { generateToken } = require('../utils/jwt');
 
-// Helper validation
+
 const validateEmail = (email) => {
-  const re = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+ 
+  const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   return re.test(email);
 };
 
@@ -12,7 +13,6 @@ const signup = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
 
-    // Input validation
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Please provide name, email and password' });
     }
@@ -35,9 +35,7 @@ const signup = async (req, res, next) => {
       user: { id: user._id, name: user.name, email: user.email },
     });
   } catch (error) {
-    // Log error for debugging
     console.error(error);
-    // Forward to global error handler
     next(error);
   }
 };
@@ -46,7 +44,6 @@ const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    // Input validation
     if (!email || !password) {
       return res.status(400).json({ message: 'Please provide email and password' });
     }

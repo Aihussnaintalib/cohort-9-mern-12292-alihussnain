@@ -2,14 +2,16 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+
+// Load .env FIRST before importing routes
+dotenv.config();
+
 const connectDB = require('./src/config/db');
 const authRoutes = require('./src/routes/authRoutes');
 const noteRoutes = require('./src/routes/noteRoutes');
 const errorHandler = require('./src/middleware/errorHandler');
 const logger = require('./src/config/logger');
 const pinoHttp = require('pino-http');
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -25,24 +27,22 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Pino HTTP logging middleware (logs all requests)
 app.use(pinoHttp({ logger }));
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/notes', noteRoutes);
 
-// Health check with logger
+// Health check
 app.get('/api/health', (req, res) => {
   logger.info('Health check endpoint called');
   res.status(200).json({ status: 'OK', message: 'Server is running' });
 });
 
-// Error handler (should be last)
+// Error handler
 app.use(errorHandler);
 
-// Start server only after database connects
+// Start server
 const startServer = async () => {
   try {
     await connectDB();
@@ -55,7 +55,6 @@ const startServer = async () => {
   }
 };
 
-// Only start if this file is run directly
 if (require.main === module) {
   startServer();
 }
