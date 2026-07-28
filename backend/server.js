@@ -2,9 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
-const connectDB = require('./src/config/db');
-const authRoutes = require('./src/routes/authRoutes');
-const noteRoutes = require('./src/routes/noteRoutes');
 
 // Load .env FIRST before importing routes
 dotenv.config();
@@ -24,8 +21,6 @@ const corsOptions = {
   origin: process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
     : ['http://localhost:3000', 'http://localhost:5173'],
-  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3000', 'http://localhost:5173'],
-  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
   optionsSuccessStatus: 200
 };
@@ -41,7 +36,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/notes', noteRoutes);
 
 // Health check
-// Test route
 app.get('/api/health', (req, res) => {
   logger.debug('Health check endpoint called');
   res.status(200).json({ status: 'OK', message: 'Server is running' });
@@ -55,9 +49,7 @@ app.use((req, res) => {
 // Error handler (should be last)
 app.use(errorHandler);
 
-// Start server - ONLY ONE DECLARATION
-// Start server only after database connects
-// Start server ONLY after database connects
+// Start server
 const startServer = async () => {
   try {
     await connectDB();
@@ -65,7 +57,6 @@ const startServer = async () => {
       logger.info(`Server is running on port ${PORT}`);
     });
 
-    // Handle server errors (port conflict, etc.)
     server.on('error', (error) => {
       logger.error(`Server error: ${error.message}`);
       process.exit(1);
@@ -95,8 +86,6 @@ const startServer = async () => {
   }
 };
 
-
-// Only start if this file is run directly
 if (require.main === module) {
   startServer();
 }
