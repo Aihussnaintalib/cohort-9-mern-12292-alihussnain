@@ -4,7 +4,6 @@ const sanitizeHtml = require('sanitize-html');
 
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 
-// Sanitize HTML content - data: only allowed for images
 const sanitizeContent = (content) => {
   return sanitizeHtml(content, {
     allowedTags: [
@@ -31,18 +30,19 @@ const sanitizeContent = (content) => {
   });
 };
 
-// Check if content has meaningful text or embeds
-const hasValidContent = (html) => {
-  if (!html) return false;
-  const sanitized = sanitizeContent(html);
-  // Remove empty paragraphs and whitespace
-  const clean = sanitized
-    .replace(/<p>\s*<\/p>/g, '')
-    .replace(/<p><br><\/p>/g, '')
-    .replace(/&nbsp;/g, '')
-    .trim();
-  // Check for meaningful text or images
-  return clean.length > 0 || sanitized.includes('<img');
+const hasValidContent = (sanitized) => {
+  if (!sanitized) return false;
+  const textContent = sanitized.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim();
+  const imgRegex = /<img[^>]*src=["']([^"']*)["']/g;
+  let match;
+  let hasValidImage = false;
+  while ((match = imgRegex.exec(sanitized)) !== null) {
+    if (match[1] && match[1].trim().length > 0) {
+      hasValidImage = true;
+      break;
+    }
+  }
+  return textContent.length > 0 || hasValidImage;
 };
 
 const createNote = async (req, res, next) => {
@@ -56,7 +56,6 @@ const createNote = async (req, res, next) => {
       return res.status(400).json({ message: 'Please provide valid content' });
     }
 
-    // Sanitize and validate content
     const sanitizedContent = sanitizeContent(content);
     if (!hasValidContent(sanitizedContent)) {
       return res.status(400).json({ message: 'Please provide meaningful content' });
@@ -94,9 +93,6 @@ const getNotes = async (req, res, next) => {
     }
     
     const skip = (page - 1) * limit;
-    if (!Number.isSafeInteger(skip) || skip < 0) {
-      return res.status(400).json({ message: 'Invalid pagination parameters' });
-    }
 
     const notes = await Note.find({ user: req.user._id })
       .sort({ createdAt: -1 })
