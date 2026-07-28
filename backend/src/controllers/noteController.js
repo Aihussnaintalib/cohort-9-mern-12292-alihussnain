@@ -20,7 +20,6 @@ const createNote = async (req, res, next) => {
 
     res.status(201).json({ success: true, data: note });
   } catch (error) {
-    // No logger.error here - errorHandler will log it
     next(error);
   }
 };
@@ -32,17 +31,25 @@ const getNotes = async (req, res, next) => {
     const limit = req.query.limit === undefined ? 10 : Number(req.query.limit);
     
     // Validate pagination parameters
+    const MAX_PAGE = 1000;
+    const MAX_LIMIT = 100;
+    
     if (
       !Number.isSafeInteger(page) ||
       page < 1 ||
+      page > MAX_PAGE ||
       !Number.isSafeInteger(limit) ||
       limit < 1 ||
-      limit > 100
+      limit > MAX_LIMIT
     ) {
       return res.status(400).json({ message: 'Invalid pagination parameters' });
     }
     
+    // Calculate skip and ensure it's a safe integer
     const skip = (page - 1) * limit;
+    if (!Number.isSafeInteger(skip) || skip < 0) {
+      return res.status(400).json({ message: 'Invalid pagination parameters' });
+    }
 
     const notes = await Note.find({ user: req.user._id })
       .sort({ createdAt: -1 })
