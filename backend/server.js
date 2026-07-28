@@ -16,9 +16,9 @@ const pinoHttp = require('pino-http');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// CORS configuration
+// CORS configuration - trim origins
 const corsOptions = {
-  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3000', 'http://localhost:5173'],
+  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
   optionsSuccessStatus: 200
 };
@@ -33,9 +33,9 @@ app.use(pinoHttp({ logger }));
 app.use('/api/auth', authRoutes);
 app.use('/api/notes', noteRoutes);
 
-// Health check
+// Health check - lower log level to debug
 app.get('/api/health', (req, res) => {
-  logger.info('Health check endpoint called');
+  logger.debug('Health check endpoint called');
   res.status(200).json({ status: 'OK', message: 'Server is running' });
 });
 
@@ -46,9 +46,23 @@ app.use(errorHandler);
 const startServer = async () => {
   try {
     await connectDB();
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       logger.info(`Server is running on port ${PORT}`);
     });
+
+    // Graceful shutdown
+    const shutdown = async () => {
+      logger.info('Shutting down gracefully...');
+      server.close(async () => {
+        await connectDB.disconnect();
+        logger.info('Server closed');
+        process.exit(0);
+      });
+    };
+
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
+
   } catch (error) {
     logger.error(`Failed to start server: ${error.message}`);
     process.exit(1);

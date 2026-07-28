@@ -1,10 +1,10 @@
 
 const User = require('../models/User');
 const { generateToken } = require('../utils/jwt');
+const logger = require('../config/logger');
 
-
+// Email validation - simple but effective
 const validateEmail = (email) => {
- 
   const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   return re.test(email);
 };
@@ -23,11 +23,13 @@ const signup = async (req, res, next) => {
       return res.status(400).json({ message: 'Please provide a valid email' });
     }
 
-    const userExists = await User.findOne({ email });
+    // Normalize email to lowercase for database lookup
+    const normalizedEmail = email.toLowerCase();
+    const userExists = await User.findOne({ email: normalizedEmail });
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
-    const user = await User.create({ name, email, password });
+    const user = await User.create({ name, email: normalizedEmail, password });
     const token = generateToken(user._id);
     res.status(201).json({
       success: true,
@@ -35,7 +37,7 @@ const signup = async (req, res, next) => {
       user: { id: user._id, name: user.name, email: user.email },
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     next(error);
   }
 };
@@ -51,7 +53,9 @@ const login = async (req, res, next) => {
       return res.status(400).json({ message: 'Please provide a valid email' });
     }
 
-    const user = await User.findOne({ email }).select('+password');
+    // Normalize email to lowercase for database lookup
+    const normalizedEmail = email.toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail }).select('+password');
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -66,7 +70,7 @@ const login = async (req, res, next) => {
       user: { id: user._id, name: user.name, email: user.email },
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     next(error);
   }
 };
