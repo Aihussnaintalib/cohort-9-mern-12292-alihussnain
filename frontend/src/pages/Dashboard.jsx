@@ -23,7 +23,6 @@ const sanitizeNoteContent = (html) => {
       img: ['src', 'alt', 'width', 'height'],
       '*': ['class', 'style']
     },
-    // data: only allowed for images, not for links
     allowedSchemes: ['http', 'https'],
     allowedSchemesByTag: {
       img: ['http', 'https', 'data']
@@ -38,9 +37,22 @@ const sanitizeNoteContent = (html) => {
 // Check if content has meaningful text or embeds
 const hasValidContent = (html) => {
   if (!html) return false;
-  // Remove empty paragraph tags and whitespace
-  const clean = html.replace(/<p><br><\/p>/g, '').replace(/<p>\s*<\/p>/g, '').trim();
-  return clean.length > 0 && clean !== '<p><br></p>';
+  
+  // Sanitize first to remove dangerous content
+  const sanitized = sanitizeNoteContent(html);
+  
+  // Use DOMParser to extract meaningful content
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(sanitized, 'text/html');
+  const body = doc.body;
+  
+  // Check for text content (excluding whitespace and non-breaking spaces)
+  const text = body.textContent?.replace(/\u00a0/g, '').trim();
+  
+  // Check for images or other embeds
+  const hasEmbed = body.querySelector('img') !== null;
+  
+  return Boolean(text || hasEmbed);
 };
 
 const Dashboard = () => {
@@ -108,7 +120,10 @@ const Dashboard = () => {
     }
 
     try {
-      await axios.post(`${API_URL}/api/notes`, { title, content }, {
+      await axios.post(`${API_URL}/api/notes`, { 
+        title: title.trim(), 
+        content 
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTitle('');

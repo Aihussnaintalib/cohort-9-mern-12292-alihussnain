@@ -4,7 +4,7 @@ const sanitizeHtml = require('sanitize-html');
 
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 
-// Sanitize HTML content
+// Sanitize HTML content - data: only allowed for images
 const sanitizeContent = (content) => {
   return sanitizeHtml(content, {
     allowedTags: [
@@ -20,11 +20,29 @@ const sanitizeContent = (content) => {
       img: ['src', 'alt', 'width', 'height'],
       '*': ['class', 'style']
     },
-    allowedSchemes: ['http', 'https', 'data'],
+    allowedSchemes: ['http', 'https'],
     allowedSchemesByTag: {
       img: ['http', 'https', 'data']
+    },
+    allowedIframeHostnames: [],
+    transformTags: {
+      a: sanitizeHtml.simpleTransform('a', { target: '_blank' })
     }
   });
+};
+
+// Check if content has meaningful text or embeds
+const hasValidContent = (html) => {
+  if (!html) return false;
+  const sanitized = sanitizeContent(html);
+  // Remove empty paragraphs and whitespace
+  const clean = sanitized
+    .replace(/<p>\s*<\/p>/g, '')
+    .replace(/<p><br><\/p>/g, '')
+    .replace(/&nbsp;/g, '')
+    .trim();
+  // Check for meaningful text or images
+  return clean.length > 0 || sanitized.includes('<img');
 };
 
 const createNote = async (req, res, next) => {
@@ -38,8 +56,11 @@ const createNote = async (req, res, next) => {
       return res.status(400).json({ message: 'Please provide valid content' });
     }
 
-    // Sanitize content
+    // Sanitize and validate content
     const sanitizedContent = sanitizeContent(content);
+    if (!hasValidContent(sanitizedContent)) {
+      return res.status(400).json({ message: 'Please provide meaningful content' });
+    }
 
     const note = await Note.create({
       title: title.trim(),
@@ -124,7 +145,11 @@ const updateNote = async (req, res, next) => {
       updateData.title = title.trim();
     }
     if (content && typeof content === 'string' && content.trim().length > 0) {
-      updateData.content = sanitizeContent(content);
+      const sanitizedContent = sanitizeContent(content);
+      if (!hasValidContent(sanitizedContent)) {
+        return res.status(400).json({ message: 'Please provide meaningful content' });
+      }
+      updateData.content = sanitizedContent;
     }
 
     if (Object.keys(updateData).length === 0) {
