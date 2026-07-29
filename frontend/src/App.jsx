@@ -1,16 +1,17 @@
-
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Login from './components/auth/Login';
 import Signup from './components/auth/Signup';
 import Dashboard from './pages/Dashboard';
 import './App.css';
 
-// Placeholder Profile component (will be replaced in PR #12)
+// Placeholder Profile component
 const ProfilePlaceholder = () => (
   <div className="profile-container">
     <h2>Profile</h2>
     <p>Profile page coming soon...</p>
-    <button onClick={() => window.location.href = '/dashboard'}>Back to Dashboard</button>
+    <Link to="/dashboard">
+      <button>Back to Dashboard</button>
+    </Link>
   </div>
 );
 

@@ -1,9 +1,20 @@
+
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import NoteEditor from '../components/notes/NoteEditor';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+// Simple sanitization for rendering
+const sanitizeHtml = (html) => {
+  if (!html) return '';
+  // Remove script tags and on* event handlers
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/ on\w+="[^"]*"/g, '')
+    .replace(/ on\w+='[^']*'/g, '');
+};
 
 const Dashboard = () => {
   const [notes, setNotes] = useState([]);
@@ -147,7 +158,10 @@ const Dashboard = () => {
           notes.map((note) => (
             <div key={note._id} className="note-card">
               <h3>{note.title}</h3>
-              <div className="note-content" dangerouslySetInnerHTML={{ __html: note.content }} />
+              <div 
+                className="note-content" 
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.content) }} 
+              />
               <small>{new Date(note.createdAt).toLocaleDateString()}</small>
               <button className="delete-btn" onClick={() => deleteNote(note._id)}>
                 Delete
