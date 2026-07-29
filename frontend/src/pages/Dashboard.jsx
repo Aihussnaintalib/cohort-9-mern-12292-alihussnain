@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import NoteEditor from '../components/notes/NoteEditor';
 
-// Use environment variable or fallback to localhost
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const Dashboard = () => {
@@ -14,7 +13,6 @@ const Dashboard = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // Helper to handle 401 responses
   const handleUnauthorized = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -54,7 +52,7 @@ const Dashboard = () => {
     e.preventDefault();
     const token = localStorage.getItem('token');
 
-    if (!title.trim() || !content.trim()) {
+    if (!title.trim() || !content || content === '<p><br></p>') {
       setError('Please provide title and content');
       return;
     }
@@ -138,12 +136,7 @@ const Dashboard = () => {
           onChange={(e) => setTitle(e.target.value)}
           required
         />
-        <textarea
-          placeholder="Note Content"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          required
-        />
+        <NoteEditor value={content} onChange={setContent} />
         <button type="submit">Add Note</button>
       </form>
 
@@ -154,7 +147,7 @@ const Dashboard = () => {
           notes.map((note) => (
             <div key={note._id} className="note-card">
               <h3>{note.title}</h3>
-              <p>{note.content}</p>
+              <div className="note-content" dangerouslySetInnerHTML={{ __html: note.content }} />
               <small>{new Date(note.createdAt).toLocaleDateString()}</small>
               <button className="delete-btn" onClick={() => deleteNote(note._id)}>
                 Delete

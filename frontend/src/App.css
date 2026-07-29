@@ -244,3 +244,27 @@
   border-radius: 4px;
   box-sizing: border-box;
 }
+.note-content {
+  margin: 10px 0;
+  word-wrap: break-word;
+  line-height: 1.6;
+}
+
+.note-content ul,
+.note-content ol {
+  padding-left: 20px;
+}
+
+.note-content blockquote {
+  border-left: 3px solid #ddd;
+  padding-left: 10px;
+  margin: 10px 0;
+  color: #666;
+}
+
+.note-content pre {
+  background: #f4f4f4;
+  padding: 10px;
+  border-radius: 4px;
+  overflow-x: auto;
+}
