@@ -1,8 +1,31 @@
-
 const Note = require('../models/Note');
 const mongoose = require('mongoose');
+const sanitizeHtml = require('sanitize-html');
 
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+// Sanitize HTML content
+const sanitizeContent = (content) => {
+  return sanitizeHtml(content, {
+    allowedTags: [
+      'p', 'br', 'b', 'i', 'u', 's', 'strike',
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+      'ul', 'ol', 'li', 'blockquote', 'code',
+      'pre', 'a', 'img', 'strong', 'em',
+      'span', 'div', 'table', 'thead', 'tbody',
+      'tr', 'th', 'td'
+    ],
+    allowedAttributes: {
+      a: ['href', 'target'],
+      img: ['src', 'alt', 'width', 'height'],
+      '*': ['class', 'style']
+    },
+    allowedSchemes: ['http', 'https', 'data'],
+    allowedSchemesByTag: {
+      img: ['http', 'https', 'data']
+    }
+  });
+};
 
 const createNote = async (req, res, next) => {
   try {
@@ -15,9 +38,12 @@ const createNote = async (req, res, next) => {
       return res.status(400).json({ message: 'Please provide valid content' });
     }
 
+    // Sanitize content
+    const sanitizedContent = sanitizeContent(content);
+
     const note = await Note.create({
       title: title.trim(),
-      content: content.trim(),
+      content: sanitizedContent,
       user: req.user._id,
     });
 
@@ -98,7 +124,7 @@ const updateNote = async (req, res, next) => {
       updateData.title = title.trim();
     }
     if (content && typeof content === 'string' && content.trim().length > 0) {
-      updateData.content = content.trim();
+      updateData.content = sanitizeContent(content);
     }
 
     if (Object.keys(updateData).length === 0) {

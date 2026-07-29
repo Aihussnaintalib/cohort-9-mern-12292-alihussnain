@@ -2,16 +2,16 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const mongoose = require('mongoose');
+
+// Load .env FIRST before importing routes
+dotenv.config();
+
 const connectDB = require('./src/config/db');
 const authRoutes = require('./src/routes/authRoutes');
 const noteRoutes = require('./src/routes/noteRoutes');
 const errorHandler = require('./src/middleware/errorHandler');
 const logger = require('./src/config/logger');
 const pinoHttp = require('pino-http');
-
-// Load .env FIRST before importing routes
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -50,7 +50,6 @@ const startServer = async () => {
       logger.info(`Server is running on port ${PORT}`);
     });
 
-    // Graceful shutdown
     const shutdown = async () => {
       logger.info('Shutting down gracefully...');
       server.close(async () => {
