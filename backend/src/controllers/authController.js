@@ -2,8 +2,12 @@
 const User = require('../models/User');
 const { generateToken } = require('../utils/jwt');
 const logger = require('../config/logger');
+const bcrypt = require('bcrypt');
 
-// Email validation - simple but effective
+// Dummy hash for timing attack prevention
+const DUMMY_HASH = '$2b$10$CwTycUXWue0Thq9StjUM0uJ8bQhO5UcpwjkYmMKz.fF6dqvz.Jd4W';
+
+// Email validation
 const validateEmail = (email) => {
   const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   return re.test(email);
@@ -16,14 +20,13 @@ const signup = async (req, res, next) => {
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Please provide name, email and password' });
     }
-    if (password.length < 6) {
+    if (typeof password !== 'string' || password.length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters' });
     }
     if (!validateEmail(email)) {
       return res.status(400).json({ message: 'Please provide a valid email' });
     }
 
-    // Normalize email to lowercase for database lookup
     const normalizedEmail = email.toLowerCase();
     const userExists = await User.findOne({ email: normalizedEmail });
     if (userExists) {
@@ -37,6 +40,10 @@ const signup = async (req, res, next) => {
       user: { id: user._id, name: user.name, email: user.email },
     });
   } catch (error) {
+    // Handle duplicate key error (E11000)
+    if (error.code === 11000) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
     logger.error(error);
     next(error);
   }
@@ -53,16 +60,21 @@ const login = async (req, res, next) => {
       return res.status(400).json({ message: 'Please provide a valid email' });
     }
 
-    // Normalize email to lowercase for database lookup
     const normalizedEmail = email.toLowerCase();
     const user = await User.findOne({ email: normalizedEmail }).select('+password');
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-    const isMatch = await user.matchPassword(password);
+    
+    // Timing attack prevention - always compare
+    const isMatch = user
+      ? await user.matchPassword(password)
+      : await bcrypt.compare(password, DUMMY_HASH);
+    
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    
     const token = generateToken(user._id);
     res.status(200).json({
       success: true,

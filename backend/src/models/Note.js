@@ -19,12 +19,14 @@ const noteSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true, // Add index for query performance
     },
   },
   {
     timestamps: true,
   }
 );
+
+// Compound index for common query pattern: filter by user, sort by createdAt
+noteSchema.index({ user: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Note', noteSchema);

@@ -2,10 +2,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-
-// Load .env FIRST before importing routes
-dotenv.config();
-
+const mongoose = require('mongoose');
 const connectDB = require('./src/config/db');
 const authRoutes = require('./src/routes/authRoutes');
 const noteRoutes = require('./src/routes/noteRoutes');
@@ -13,10 +10,13 @@ const errorHandler = require('./src/middleware/errorHandler');
 const logger = require('./src/config/logger');
 const pinoHttp = require('pino-http');
 
+// Load .env FIRST before importing routes
+dotenv.config();
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// CORS configuration - trim origins
+// CORS configuration
 const corsOptions = {
   origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
@@ -33,7 +33,7 @@ app.use(pinoHttp({ logger }));
 app.use('/api/auth', authRoutes);
 app.use('/api/notes', noteRoutes);
 
-// Health check - lower log level to debug
+// Health check
 app.get('/api/health', (req, res) => {
   logger.debug('Health check endpoint called');
   res.status(200).json({ status: 'OK', message: 'Server is running' });
@@ -54,9 +54,15 @@ const startServer = async () => {
     const shutdown = async () => {
       logger.info('Shutting down gracefully...');
       server.close(async () => {
-        await connectDB.disconnect();
-        logger.info('Server closed');
-        process.exit(0);
+        try {
+          await mongoose.disconnect();
+          logger.info('MongoDB disconnected');
+        } catch (error) {
+          logger.error(`Shutdown error: ${error.message}`);
+        } finally {
+          logger.info('Server closed');
+          process.exit(0);
+        }
       });
     };
 

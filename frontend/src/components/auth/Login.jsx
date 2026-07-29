@@ -1,6 +1,9 @@
+
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -13,7 +16,8 @@ const Login = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', formData);
+      const response = await axios.post(`${API_URL}/api/auth/login`, formData);
+      // In production, use HttpOnly cookie instead
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       navigate('/dashboard');
@@ -48,7 +52,7 @@ const Login = () => {
         </button>
       </form>
       <p>
-        Don't have an account? <a href="/signup">Signup</a>
+        Don't have an account? <Link to="/signup">Signup</Link>
       </p>
     </div>
   );
