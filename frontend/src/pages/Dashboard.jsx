@@ -1,8 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-const API_URL = 'http://localhost:5000';
+// Use environment variable or fallback to localhost
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const Dashboard = () => {
   const [notes, setNotes] = useState([]);
@@ -12,7 +14,13 @@ const Dashboard = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // Fetch notes on component mount
+  // Helper to handle 401 responses
+  const handleUnauthorized = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -30,9 +38,8 @@ const Dashboard = () => {
       } catch (err) {
         console.error('Fetch error:', err);
         if (err.response?.status === 401) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          navigate('/login');
+          handleUnauthorized();
+          return;
         }
         setError('Failed to fetch notes');
       } finally {
@@ -41,9 +48,8 @@ const Dashboard = () => {
     };
 
     fetchNotes();
-  }, []); // ✅ Empty array - runs only once
+  }, []);
 
-  // Create a new note
   const createNote = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
@@ -61,18 +67,20 @@ const Dashboard = () => {
       setContent('');
       setError('');
       
-      // Refetch notes after create
       const response = await axios.get(`${API_URL}/api/notes`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setNotes(response.data?.data || []);
     } catch (err) {
       console.error('Create error:', err);
+      if (err.response?.status === 401) {
+        handleUnauthorized();
+        return;
+      }
       setError('Failed to create note');
     }
   };
 
-  // Delete a note
   const deleteNote = async (id) => {
     const token = localStorage.getItem('token');
     if (!window.confirm('Are you sure you want to delete this note?')) return;
@@ -82,25 +90,26 @@ const Dashboard = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      // Refetch notes after delete
       const response = await axios.get(`${API_URL}/api/notes`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setNotes(response.data?.data || []);
     } catch (err) {
       console.error('Delete error:', err);
+      if (err.response?.status === 401) {
+        handleUnauthorized();
+        return;
+      }
       setError('Failed to delete note');
     }
   };
 
-  // Logout
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     navigate('/login');
   };
 
-  // Loading state
   if (loading) {
     return <div className="loading">Loading notes...</div>;
   }

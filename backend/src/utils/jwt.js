@@ -1,10 +1,9 @@
 
 const jwt = require('jsonwebtoken');
 
-// Validate JWT_SECRET at module load
 const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is not defined. Please check your .env file.');
+if (!JWT_SECRET || Buffer.byteLength(JWT_SECRET, 'utf8') < 32) {
+  throw new Error('JWT_SECRET must be at least 32 bytes long. Please set a strong secret in your .env file.');
 }
 
 const generateToken = (id) => {
@@ -12,7 +11,6 @@ const generateToken = (id) => {
 };
 
 const verifyToken = (token) => {
-  // Explicitly restrict to HS256 algorithm
   return jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
 };
 

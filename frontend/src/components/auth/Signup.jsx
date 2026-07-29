@@ -17,7 +17,6 @@ const Signup = () => {
     setError('');
     try {
       const response = await axios.post(`${API_URL}/api/auth/signup`, formData);
-      // In production, use HttpOnly cookie instead
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       navigate('/dashboard');
@@ -33,28 +32,40 @@ const Signup = () => {
       <h2>Signup</h2>
       {error && <div className="error">{error}</div>}
       <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Name"
-          value={formData.name}
-          onChange={(e) => setFormData({...formData, name: e.target.value})}
-          required
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={formData.email}
-          onChange={(e) => setFormData({...formData, email: e.target.value})}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password (min 6 chars)"
-          value={formData.password}
-          onChange={(e) => setFormData({...formData, password: e.target.value})}
-          required
-          minLength="6"
-        />
+        <div className="form-group">
+          <label htmlFor="signup-name">Name</label>
+          <input
+            id="signup-name"
+            type="text"
+            placeholder="Name"
+            value={formData.name}
+            onChange={(e) => setFormData({...formData, name: e.target.value})}
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label htmlFor="signup-email">Email</label>
+          <input
+            id="signup-email"
+            type="email"
+            placeholder="Email"
+            value={formData.email}
+            onChange={(e) => setFormData({...formData, email: e.target.value})}
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label htmlFor="signup-password">Password (min 6 chars)</label>
+          <input
+            id="signup-password"
+            type="password"
+            placeholder="Password (min 6 chars)"
+            value={formData.password}
+            onChange={(e) => setFormData({...formData, password: e.target.value})}
+            required
+            minLength="6"
+          />
+        </div>
         <button type="submit" disabled={loading}>
           {loading ? 'Signing up...' : 'Signup'}
         </button>
