@@ -1,19 +1,37 @@
-
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import NoteEditor from '../components/notes/NoteEditor';
+import sanitizeHtml from 'sanitize-html';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-// Simple sanitization for rendering
-const sanitizeHtml = (html) => {
+// Strict allowlist sanitizer
+const sanitizeNoteContent = (html) => {
   if (!html) return '';
-  // Remove script tags and on* event handlers
-  return html
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/ on\w+="[^"]*"/g, '')
-    .replace(/ on\w+='[^']*'/g, '');
+  return sanitizeHtml(html, {
+    allowedTags: [
+      'p', 'br', 'b', 'i', 'u', 's', 'strike',
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+      'ul', 'ol', 'li', 'blockquote', 'code',
+      'pre', 'a', 'img', 'strong', 'em',
+      'span', 'div', 'table', 'thead', 'tbody',
+      'tr', 'th', 'td'
+    ],
+    allowedAttributes: {
+      a: ['href', 'target'],
+      img: ['src', 'alt', 'width', 'height'],
+      '*': ['class', 'style']
+    },
+    allowedSchemes: ['http', 'https', 'data'],
+    allowedSchemesByTag: {
+      img: ['http', 'https', 'data']
+    },
+    allowedIframeHostnames: [],
+    transformTags: {
+      a: sanitizeHtml.simpleTransform('a', { target: '_blank' })
+    }
+  });
 };
 
 const Dashboard = () => {
@@ -160,7 +178,7 @@ const Dashboard = () => {
               <h3>{note.title}</h3>
               <div 
                 className="note-content" 
-                dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.content) }} 
+                dangerouslySetInnerHTML={{ __html: sanitizeNoteContent(note.content) }} 
               />
               <small>{new Date(note.createdAt).toLocaleDateString()}</small>
               <button className="delete-btn" onClick={() => deleteNote(note._id)}>
