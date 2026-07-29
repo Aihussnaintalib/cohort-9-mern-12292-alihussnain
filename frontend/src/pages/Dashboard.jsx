@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import NoteEditor from '../components/notes/NoteEditor';
@@ -23,7 +23,8 @@ const sanitizeNoteContent = (html) => {
       img: ['src', 'alt', 'width', 'height'],
       '*': ['class', 'style']
     },
-    allowedSchemes: ['http', 'https', 'data'],
+    // data: only allowed for images, not for links
+    allowedSchemes: ['http', 'https'],
     allowedSchemesByTag: {
       img: ['http', 'https', 'data']
     },
@@ -34,6 +35,14 @@ const sanitizeNoteContent = (html) => {
   });
 };
 
+// Check if content has meaningful text or embeds
+const hasValidContent = (html) => {
+  if (!html) return false;
+  // Remove empty paragraph tags and whitespace
+  const clean = html.replace(/<p><br><\/p>/g, '').replace(/<p>\s*<\/p>/g, '').trim();
+  return clean.length > 0 && clean !== '<p><br></p>';
+};
+
 const Dashboard = () => {
   const [notes, setNotes] = useState([]);
   const [title, setTitle] = useState('');
@@ -41,6 +50,14 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  // Memoize sanitized notes to avoid re-sanitizing on every render
+  const sanitizedNotes = useMemo(() => {
+    return notes.map(note => ({
+      ...note,
+      sanitizedContent: sanitizeNoteContent(note.content)
+    }));
+  }, [notes]);
 
   const handleUnauthorized = () => {
     localStorage.removeItem('token');
@@ -81,8 +98,12 @@ const Dashboard = () => {
     e.preventDefault();
     const token = localStorage.getItem('token');
 
-    if (!title.trim() || !content || content === '<p><br></p>') {
-      setError('Please provide title and content');
+    if (!title.trim()) {
+      setError('Please provide a title');
+      return;
+    }
+    if (!hasValidContent(content)) {
+      setError('Please provide meaningful content');
       return;
     }
 
@@ -94,6 +115,7 @@ const Dashboard = () => {
       setContent('');
       setError('');
       
+      // Refetch notes after create
       const response = await axios.get(`${API_URL}/api/notes`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -117,6 +139,7 @@ const Dashboard = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
+      // Refetch notes after delete
       const response = await axios.get(`${API_URL}/api/notes`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -170,15 +193,15 @@ const Dashboard = () => {
       </form>
 
       <div className="notes-grid">
-        {notes.length === 0 ? (
+        {sanitizedNotes.length === 0 ? (
           <p className="no-notes">No notes yet. Create your first note!</p>
         ) : (
-          notes.map((note) => (
+          sanitizedNotes.map((note) => (
             <div key={note._id} className="note-card">
               <h3>{note.title}</h3>
               <div 
                 className="note-content" 
-                dangerouslySetInnerHTML={{ __html: sanitizeNoteContent(note.content) }} 
+                dangerouslySetInnerHTML={{ __html: note.sanitizedContent }} 
               />
               <small>{new Date(note.createdAt).toLocaleDateString()}</small>
               <button className="delete-btn" onClick={() => deleteNote(note._id)}>
