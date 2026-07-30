@@ -1,4 +1,3 @@
-
 const Note = require('../models/Note');
 const mongoose = require('mongoose');
 const sanitizeHtml = require('sanitize-html');
@@ -32,18 +31,23 @@ const sanitizeContent = (content) => {
   });
 };
 
-// Check if content has meaningful text or embeds
-const hasValidContent = (html) => {
-  if (!html) return false;
-  
-  const sanitized = sanitizeContent(html);
+// Check if sanitized content has meaningful text or valid images
+const hasValidContent = (sanitized) => {
+  if (!sanitized) return false;
   
   // Extract text content (remove HTML tags)
   const textContent = sanitized.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim();
   
-  // Check for images with valid src
-  const imgMatch = sanitized.match(/<img[^>]*src=["']([^"']*)["']/);
-  const hasValidImage = imgMatch && imgMatch[1] && imgMatch[1].trim().length > 0;
+  // Check ALL images for valid src
+  const imgRegex = /<img[^>]*src=["']([^"']*)["']/g;
+  let match;
+  let hasValidImage = false;
+  while ((match = imgRegex.exec(sanitized)) !== null) {
+    if (match[1] && match[1].trim().length > 0) {
+      hasValidImage = true;
+      break;
+    }
+  }
   
   // Content is valid if it has meaningful text OR a valid image
   return textContent.length > 0 || hasValidImage;
@@ -60,6 +64,7 @@ const createNote = async (req, res, next) => {
       return res.status(400).json({ message: 'Please provide valid content' });
     }
 
+    // Sanitize once
     const sanitizedContent = sanitizeContent(content);
     if (!hasValidContent(sanitizedContent)) {
       return res.status(400).json({ message: 'Please provide meaningful content' });

@@ -100,11 +100,6 @@
   color: white;
 }
 
-.logout-btn {
-  background: #b71c1c;
-  color: white;
-}
-
 .note-form {
   margin: 20px 0;
   padding: 20px;
@@ -273,12 +268,13 @@
   font-size: 16px;
 }
 
-.back-btn {
-  background: #0d47a1;
+/* Shared logout button */
+.logout-btn {
+  background: #b71c1c;
   color: white;
 }
 
-.logout-btn {
-  background: #b71c1c;
+.back-btn {
+  background: #0d47a1;
   color: white;
 }
