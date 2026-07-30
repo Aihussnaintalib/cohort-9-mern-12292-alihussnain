@@ -25,12 +25,12 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
-
+// Middleware
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
+// ✅ Pino HTTP Logger with redaction
 app.use(pinoHttp({
   logger,
   redact: {
@@ -57,7 +57,7 @@ app.use((req, res) => {
 // Error handler (should be last)
 app.use(errorHandler);
 
-
+// ✅ ONLY ONE startServer — with graceful shutdown
 const startServer = async () => {
   try {
     await connectDB();
