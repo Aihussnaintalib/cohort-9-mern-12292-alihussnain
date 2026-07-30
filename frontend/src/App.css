@@ -1,3 +1,4 @@
+
 .App {
   text-align: center;
   padding: 20px;
@@ -25,7 +26,7 @@
 .auth-container button {
   width: 100%;
   padding: 12px;
-  background: #4CAF50;
+  background: #1b5e20;
   color: white;
   border: none;
   border-radius: 4px;
@@ -39,7 +40,7 @@
 }
 
 .error {
-  color: red;
+  color: #c62828;
   padding: 10px;
   background: #ffebee;
   border-radius: 4px;
@@ -95,12 +96,12 @@
 }
 
 .profile-btn {
-  background: #2196F3;
+  background: #0d47a1;
   color: white;
 }
 
 .logout-btn {
-  background: #f44336;
+  background: #b71c1c;
   color: white;
 }
 
@@ -127,7 +128,7 @@
 
 .note-form button {
   padding: 10px 30px;
-  background: #4CAF50;
+  background: #1b5e20;
   color: white;
   border: none;
   border-radius: 4px;
@@ -169,7 +170,7 @@
 
 .note-card .delete-btn {
   padding: 5px 15px;
-  background: #f44336;
+  background: #b71c1c;
   color: white;
   border: none;
   border-radius: 4px;
@@ -191,7 +192,7 @@
 }
 
 .error-message {
-  color: red;
+  color: #c62828;
   padding: 10px;
   background: #ffebee;
   border-radius: 4px;
@@ -223,23 +224,6 @@
   overflow-x: auto;
 }
 
-.profile-container {
-  max-width: 600px;
-  margin: 50px auto;
-  padding: 30px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-.profile-container button {
-  padding: 10px 30px;
-  background: #2196F3;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
 /* Profile styles */
 .profile-container {
   max-width: 600px;
@@ -290,11 +274,11 @@
 }
 
 .back-btn {
-  background: #2196F3;
+  background: #0d47a1;
   color: white;
 }
 
 .logout-btn {
-  background: #f44336;
+  background: #b71c1c;
   color: white;
 }
