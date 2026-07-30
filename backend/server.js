@@ -13,6 +13,7 @@ const PORT = process.env.PORT || 5000;
 // CORS configuration
 const corsOptions = {
   origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3000', 'http://localhost:5173'],
+  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
   optionsSuccessStatus: 200
 };
@@ -27,11 +28,13 @@ app.use('/api/auth', authRoutes);
 app.use('/api/notes', noteRoutes);
 
 // Health check
+// Test route
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Server is running' });
 });
 
 // Start server only after database connects
+// Start server ONLY after database connects
 const startServer = async () => {
   try {
     await connectDB();
@@ -45,6 +48,7 @@ const startServer = async () => {
 };
 
 
+// Only start if this file is run directly
 if (require.main === module) {
   startServer();
 }
