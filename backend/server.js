@@ -1,9 +1,8 @@
-
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const mongoose = require('mongoose');
 
-// Load .env FIRST before importing routes
 dotenv.config();
 
 const connectDB = require('./src/config/db');
@@ -16,39 +15,70 @@ const pinoHttp = require('pino-http');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// CORS configuration
+
 const corsOptions = {
-  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3000', 'http://localhost:5173'],
+  origin: process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
+    : ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
   optionsSuccessStatus: 200
 };
 
-// Middleware
+
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(pinoHttp({ logger }));
 
-// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/notes', noteRoutes);
 
-// Health check
+
 app.get('/api/health', (req, res) => {
-  logger.info('Health check endpoint called');
+  logger.debug('Health check endpoint called');
   res.status(200).json({ status: 'OK', message: 'Server is running' });
 });
 
-// Error handler
+
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: 'Route not found' });
+});
+
+// Error handler (should be last)
 app.use(errorHandler);
 
-// Start server
+
 const startServer = async () => {
   try {
     await connectDB();
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       logger.info(`Server is running on port ${PORT}`);
     });
+
+    
+    server.on('error', (error) => {
+      logger.error(`Server error: ${error.message}`);
+      process.exit(1);
+    });
+
+    const shutdown = async () => {
+      logger.info('Shutting down gracefully...');
+      server.close(async () => {
+        try {
+          await mongoose.disconnect();
+          logger.info('MongoDB disconnected');
+        } catch (error) {
+          logger.error(`Shutdown error: ${error.message}`);
+        } finally {
+          logger.info('Server closed');
+          process.exit(0);
+        }
+      });
+    };
+
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
+
   } catch (error) {
     logger.error(`Failed to start server: ${error.message}`);
     process.exit(1);
