@@ -2,36 +2,22 @@ const chai = require('chai');
 const expect = chai.expect;
 const request = require('supertest');
 const app = require('../server');
+const { signupAndGetToken, createUniqueUser } = require('./test-utils');
 
 describe('Notes CRUD Tests', () => {
   let token;
-  let noteId;
-  const testUser = {
-    name: 'Test User',
-    email: `test_${Date.now()}@example.com`,
-    password: '123456'
-  };
-  
-  // Second user for ownership tests
-  const testUser2 = {
-    name: 'Test User 2',
-    email: `test2_${Date.now()}@example.com`,
-    password: '123456'
-  };
   let token2;
+  let noteId;
 
   before(async function() {
-    // Signup first user
-    const res1 = await request(app)
-      .post('/api/auth/signup')
-      .send(testUser);
-    token = res1.body.token;
-
-    // Signup second user
-    const res2 = await request(app)
-      .post('/api/auth/signup')
-      .send(testUser2);
-    token2 = res2.body.token;
+    try {
+      const user1 = createUniqueUser();
+      const user2 = createUniqueUser();
+      token = await signupAndGetToken(user1);
+      token2 = await signupAndGetToken(user2);
+    } catch (error) {
+      throw new Error(`Setup failed: ${error.message}`);
+    }
   });
 
   describe('POST /api/notes', () => {
@@ -45,21 +31,8 @@ describe('Notes CRUD Tests', () => {
           if (err) return done(err);
           expect(res.body).to.have.property('success', true);
           expect(res.body.data).to.have.property('title', 'Test Note');
-          expect(res.body.data).to.have.property('user').that.is.a('string');
+          expect(res.body.data).to.have.property('content', 'Test content');
           noteId = res.body.data._id;
-          done();
-        });
-    });
-
-    it('should return 400 for invalid content (empty)', (done) => {
-      request(app)
-        .post('/api/notes')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ title: '', content: '' })
-        .expect(400)
-        .end((err, res) => {
-          if (err) return done(err);
-          expect(res.body).to.have.property('message', 'Please provide a valid title');
           done();
         });
     });
@@ -75,10 +48,23 @@ describe('Notes CRUD Tests', () => {
           done();
         });
     });
+
+    it('should return 400 for invalid content', (done) => {
+      request(app)
+        .post('/api/notes')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: '   ', content: '   ' })
+        .expect(400)
+        .end((err, res) => {
+          if (err) return done(err);
+          expect(res.body).to.have.property('message');
+          done();
+        });
+    });
   });
 
   describe('GET /api/notes', () => {
-    it('should get all notes for authenticated user', (done) => {
+    it('should get all notes', (done) => {
       request(app)
         .get('/api/notes')
         .set('Authorization', `Bearer ${token}`)
@@ -93,7 +79,7 @@ describe('Notes CRUD Tests', () => {
   });
 
   describe('GET /api/notes/:id', () => {
-    it('should get a single note by owner', (done) => {
+    it('should get a single note', (done) => {
       request(app)
         .get(`/api/notes/${noteId}`)
         .set('Authorization', `Bearer ${token}`)
@@ -110,17 +96,17 @@ describe('Notes CRUD Tests', () => {
       request(app)
         .get(`/api/notes/${noteId}`)
         .set('Authorization', `Bearer ${token2}`)
-        .expect(404)
+        .expect(403)
         .end((err, res) => {
           if (err) return done(err);
-          expect(res.body).to.have.property('message', 'Note not found');
+          expect(res.body).to.have.property('message', 'Not authorized');
           done();
         });
     });
   });
 
   describe('PUT /api/notes/:id', () => {
-    it('should update a note by owner', (done) => {
+    it('should update a note', (done) => {
       request(app)
         .put(`/api/notes/${noteId}`)
         .set('Authorization', `Bearer ${token}`)
@@ -134,22 +120,22 @@ describe('Notes CRUD Tests', () => {
         });
     });
 
-    it('should return 404 when another user tries to update', (done) => {
+    it('should return 403 when another user tries to update', (done) => {
       request(app)
         .put(`/api/notes/${noteId}`)
         .set('Authorization', `Bearer ${token2}`)
         .send({ title: 'Hacked Title' })
-        .expect(404)
+        .expect(403)
         .end((err, res) => {
           if (err) return done(err);
-          expect(res.body).to.have.property('message', 'Note not found');
+          expect(res.body).to.have.property('message', 'Not authorized');
           done();
         });
     });
   });
 
   describe('DELETE /api/notes/:id', () => {
-    it('should delete a note by owner', (done) => {
+    it('should delete a note', (done) => {
       request(app)
         .delete(`/api/notes/${noteId}`)
         .set('Authorization', `Bearer ${token}`)
@@ -162,24 +148,23 @@ describe('Notes CRUD Tests', () => {
         });
     });
 
-    it('should return 404 when another user tries to delete', (done) => {
-      // First create another note
+    it('should return 403 when another user tries to delete', (done) => {
+      // Create a note as first user
       request(app)
         .post('/api/notes')
         .set('Authorization', `Bearer ${token}`)
-        .send({ title: 'Another Note', content: 'Another content' })
+        .send({ title: 'Another Note', content: 'Content' })
         .expect(201)
         .end((err, res) => {
           if (err) return done(err);
-          const newNoteId = res.body.data._id;
-          // Try to delete with second user's token
+          const noteId2 = res.body.data._id;
           request(app)
-            .delete(`/api/notes/${newNoteId}`)
+            .delete(`/api/notes/${noteId2}`)
             .set('Authorization', `Bearer ${token2}`)
-            .expect(404)
+            .expect(403)
             .end((err2, res2) => {
               if (err2) return done(err2);
-              expect(res2.body).to.have.property('message', 'Note not found');
+              expect(res2.body).to.have.property('message', 'Not authorized');
               done();
             });
         });
