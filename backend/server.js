@@ -35,6 +35,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/notes', noteRoutes);
 
 
+// Routes
+app.use('/api/auth', authRoutes);
+
 // Test route
 app.get('/api/health', (req, res) => {
   logger.debug('Health check endpoint called');
