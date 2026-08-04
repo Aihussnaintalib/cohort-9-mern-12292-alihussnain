@@ -2,6 +2,22 @@
 const Note = require('../models/Note');
 
 const createNote = async (req, res, next) => {
+const Note = require('../models/Note');
+
+// Safe error handler
+const handleError = (res, error) => {
+  console.error(error);
+  
+  if (error.name === 'CastError') {
+    return res.status(400).json({ message: 'Invalid ID format' });
+  }
+  if (error.name === 'ValidationError') {
+    return res.status(400).json({ message: 'Validation error' });
+  }
+  return res.status(500).json({ message: 'Internal server error' });
+};
+
+const createNote = async (req, res) => {
   try {
     const { title, content } = req.body;
     
@@ -28,6 +44,11 @@ const createNote = async (req, res, next) => {
 };
 
 const getNotes = async (req, res, next) => {
+    handleError(res, error);
+  }
+};
+
+const getNotes = async (req, res) => {
   try {
     const notes = await Note.find({ user: req.user._id }).sort({ createdAt: -1 });
     res.status(200).json({ success: true, count: notes.length, data: notes });
@@ -38,6 +59,11 @@ const getNotes = async (req, res, next) => {
 };
 
 const getNote = async (req, res, next) => {
+    handleError(res, error);
+  }
+};
+
+const getNote = async (req, res) => {
   try {
     const note = await Note.findById(req.params.id);
     if (!note) {
@@ -54,6 +80,11 @@ const getNote = async (req, res, next) => {
 };
 
 const updateNote = async (req, res, next) => {
+    handleError(res, error);
+  }
+};
+
+const updateNote = async (req, res) => {
   try {
     let note = await Note.findById(req.params.id);
     if (!note) {
@@ -90,6 +121,11 @@ const updateNote = async (req, res, next) => {
 };
 
 const deleteNote = async (req, res, next) => {
+    handleError(res, error);
+  }
+};
+
+const deleteNote = async (req, res) => {
   try {
     const note = await Note.findById(req.params.id);
     if (!note) {
@@ -103,6 +139,11 @@ const deleteNote = async (req, res, next) => {
   } catch (error) {
     console.error(error);
     next(error);
+  }
+};
+
+module.exports = { createNote, getNotes, getNote, updateNote, deleteNote };
+    handleError(res, error);
   }
 };
 
