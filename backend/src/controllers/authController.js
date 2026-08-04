@@ -1,4 +1,3 @@
-
 const User = require('../models/User');
 const { generateToken } = require('../utils/jwt');
 
@@ -9,7 +8,25 @@ const validateEmail = (email) => {
   return re.test(email);
 };
 
-const signup = async (req, res, next) => {
+// Safe error handler
+const handleError = (res, error) => {
+  console.error(error); // Log original error for debugging
+  
+  // Duplicate key error
+  if (error.code === 11000) {
+    return res.status(409).json({ message: 'User already exists' });
+  }
+  
+  // Validation error
+  if (error.name === 'ValidationError') {
+    return res.status(400).json({ message: 'Validation error' });
+  }
+  
+  // Default server error (no raw error message exposed)
+  return res.status(500).json({ message: 'Internal server error' });
+};
+
+const signup = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
@@ -35,12 +52,13 @@ const signup = async (req, res, next) => {
       user: { id: user._id, name: user.name, email: user.email },
     });
   } catch (error) {
+    handleError(res, error);
     console.error(error);
     next(error);
   }
 };
 
-const login = async (req, res, next) => {
+const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -66,12 +84,12 @@ const login = async (req, res, next) => {
       user: { id: user._id, name: user.name, email: user.email },
     });
   } catch (error) {
-    console.error(error);
-    next(error);
+    handleError(res, error);
   }
 };
 
 const logout = (req, res) => {
+  // Token invalidation handled client-side for now
   res.status(200).json({ success: true, message: 'Logged out successfully' });
 };
 
