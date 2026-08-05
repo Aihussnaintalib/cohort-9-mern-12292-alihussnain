@@ -1,10 +1,15 @@
 const pino = require('pino');
 
-const isDev = process.env.NODE_ENV !== 'production';
+
+const isDevelopment = process.env.NODE_ENV === 'development';
 
 const logger = pino({
   level: process.env.LOG_LEVEL || 'info',
-  ...(isDev && {
+  redact: {
+    paths: ['req.headers.authorization', 'req.headers.cookie'],
+    remove: true,
+  },
+  ...(isDevelopment && {
     transport: {
       target: 'pino-pretty',
       options: {
