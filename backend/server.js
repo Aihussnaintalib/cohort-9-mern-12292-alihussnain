@@ -3,7 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 
-// Load .env FIRST before importing routes
+
 dotenv.config();
 
 const connectDB = require('./src/config/db');
@@ -41,7 +41,7 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Server is running' });
 });
 
-// 404 handler for unmatched routes
+
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
 });
@@ -57,8 +57,9 @@ const startServer = async () => {
       logger.info(`Server is running on port ${PORT}`);
     });
 
+   
     server.on('error', (error) => {
-      logger.error(`Server error: ${error.message}`);
+      logger.error({ err: error }, 'Server error');
       process.exit(1);
     });
 
@@ -69,7 +70,7 @@ const startServer = async () => {
           await mongoose.disconnect();
           logger.info('MongoDB disconnected');
         } catch (error) {
-          logger.error(`Shutdown error: ${error.message}`);
+          logger.error({ err: error }, 'Shutdown error');
         } finally {
           logger.info('Server closed');
           process.exit(0);
@@ -81,7 +82,8 @@ const startServer = async () => {
     process.on('SIGINT', shutdown);
 
   } catch (error) {
-    logger.error(`Failed to start server: ${error.message}`);
+    
+    logger.error({ err: error }, 'Failed to start server');
     process.exit(1);
   }
 };
