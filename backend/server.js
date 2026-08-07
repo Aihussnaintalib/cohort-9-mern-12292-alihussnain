@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 
 // Load .env FIRST before importing routes
+
 dotenv.config();
 
 const connectDB = require('./src/config/db');
@@ -42,6 +43,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // 404 handler for unmatched routes
+
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
 });
@@ -57,6 +59,7 @@ const startServer = async () => {
       logger.info(`Server is running on port ${PORT}`);
     });
 
+   
     server.on('error', (error) => {
       logger.error({ err: error }, 'Server error');
       process.exit(1);
@@ -81,6 +84,7 @@ const startServer = async () => {
     process.on('SIGINT', shutdown);
 
   } catch (error) {
+    
     logger.error({ err: error }, 'Failed to start server');
     process.exit(1);
   }

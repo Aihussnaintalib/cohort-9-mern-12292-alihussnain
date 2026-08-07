@@ -149,6 +149,7 @@ describe('Notes CRUD Tests', () => {
     });
 
     it('should return 403 when another user tries to delete', (done) => {
+      // Create a note as first user
       request(app)
         .post('/api/notes')
         .set('Authorization', `Bearer ${token}`)
