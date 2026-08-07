@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 
+// Load .env FIRST before importing routes
 
 dotenv.config();
 
@@ -41,6 +42,7 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Server is running' });
 });
 
+// 404 handler for unmatched routes
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });

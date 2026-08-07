@@ -7,6 +7,12 @@ const signupAndGetToken = async (user) => {
     .post('/api/auth/signup')
     .send(user)
     .expect(201);
+  if (!res.body.token) {
+    throw new Error('Failed to obtain token');
+  }
+  return res.body.token;
+};
+
   
   if (!res.body.token) {
     throw new Error('Failed to obtain token');
@@ -22,6 +28,7 @@ const createUniqueUser = () => ({
   password: '123456'
 });
 
+module.exports = { signupAndGetToken, createUniqueUser };
 module.exports = {
   signupAndGetToken,
   createUniqueUser

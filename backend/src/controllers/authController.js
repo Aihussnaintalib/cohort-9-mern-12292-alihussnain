@@ -3,6 +3,8 @@ const { generateToken } = require('../utils/jwt');
 const logger = require('../config/logger');
 const bcrypt = require('bcrypt');
 
+const DUMMY_HASH = process.env.DUMMY_BCRYPT_HASH;
+
 
 const DUMMY_HASH = process.env.DUMMY_BCRYPT_HASH;
 
