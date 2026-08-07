@@ -16,6 +16,7 @@ const pinoHttp = require('pino-http');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// CORS configuration
 const corsOptions = {
   origin: process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
@@ -24,28 +25,31 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
+// Middleware
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(pinoHttp({ logger }));
 
-
+// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/notes', noteRoutes);
 
-
+// Health check
 app.get('/api/health', (req, res) => {
   logger.debug('Health check endpoint called');
   res.status(200).json({ status: 'OK', message: 'Server is running' });
 });
 
+// 404 handler for unmatched routes
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
 });
 
-
+// Error handler (should be last)
 app.use(errorHandler);
 
+// Start server
 const startServer = async () => {
   try {
     await connectDB();
@@ -53,9 +57,8 @@ const startServer = async () => {
       logger.info(`Server is running on port ${PORT}`);
     });
 
-    // Handle server errors (port conflict, etc.)
     server.on('error', (error) => {
-      logger.error(`Server error: ${error.message}`);
+      logger.error({ err: error }, 'Server error');
       process.exit(1);
     });
 
@@ -66,7 +69,7 @@ const startServer = async () => {
           await mongoose.disconnect();
           logger.info('MongoDB disconnected');
         } catch (error) {
-          logger.error(`Shutdown error: ${error.message}`);
+          logger.error({ err: error }, 'Shutdown error');
         } finally {
           logger.info('Server closed');
           process.exit(0);
@@ -78,7 +81,7 @@ const startServer = async () => {
     process.on('SIGINT', shutdown);
 
   } catch (error) {
-    logger.error(`Failed to start server: ${error.message}`);
+    logger.error({ err: error }, 'Failed to start server');
     process.exit(1);
   }
 };
