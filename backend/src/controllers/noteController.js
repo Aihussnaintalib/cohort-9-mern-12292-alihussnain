@@ -1,5 +1,49 @@
-
 const Note = require('../models/Note');
+const mongoose = require('mongoose');
+const sanitizeHtml = require('sanitize-html');
+
+const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+const sanitizeContent = (content) => {
+  return sanitizeHtml(content, {
+    allowedTags: [
+      'p', 'br', 'b', 'i', 'u', 's', 'strike',
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+      'ul', 'ol', 'li', 'blockquote', 'code',
+      'pre', 'a', 'img', 'strong', 'em',
+      'span', 'div', 'table', 'thead', 'tbody',
+      'tr', 'th', 'td'
+    ],
+    allowedAttributes: {
+      a: ['href', 'target'],
+      img: ['src', 'alt', 'width', 'height'],
+      '*': ['class', 'style']
+    },
+    allowedSchemes: ['http', 'https'],
+    allowedSchemesByTag: {
+      img: ['http', 'https', 'data']
+    },
+    allowedIframeHostnames: [],
+    transformTags: {
+      a: sanitizeHtml.simpleTransform('a', { target: '_blank' })
+    }
+  });
+};
+
+const hasValidContent = (sanitized) => {
+  if (!sanitized) return false;
+  const textContent = sanitized.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim();
+  const imgRegex = /<img[^>]*src=["']([^"']*)["']/g;
+  let match;
+  let hasValidImage = false;
+  while ((match = imgRegex.exec(sanitized)) !== null) {
+    if (match[1] && match[1].trim().length > 0) {
+      hasValidImage = true;
+      break;
+    }
+  }
+  return textContent.length > 0 || hasValidImage;
+};
 
 const createNote = async (req, res, next) => {
   try {
@@ -12,9 +56,14 @@ const createNote = async (req, res, next) => {
       return res.status(400).json({ message: 'Please provide valid content' });
     }
 
+    const sanitizedContent = sanitizeContent(content);
+    if (!hasValidContent(sanitizedContent)) {
+      return res.status(400).json({ message: 'Please provide meaningful content' });
+    }
+
     const note = await Note.create({
       title: title.trim(),
-      content: content.trim(),
+      content: sanitizedContent,
       user: req.user._id,
     });
 
@@ -30,7 +79,8 @@ const getNotes = async (req, res, next) => {
     const page = req.query.page === undefined ? 1 : Number(req.query.page);
     const limit = req.query.limit === undefined ? 10 : Number(req.query.limit);
     
-    // Validate pagination parameters
+   
+    
     const MAX_PAGE = 1000;
     const MAX_LIMIT = 100;
     
@@ -50,6 +100,7 @@ const getNotes = async (req, res, next) => {
     if (!Number.isSafeInteger(skip) || skip < 0) {
       return res.status(400).json({ message: 'Invalid pagination parameters' });
     }
+    const skip = (page - 1) * limit;
 
     const notes = await Note.find({ user: req.user._id })
       .sort({ createdAt: -1 })
@@ -73,6 +124,9 @@ const getNotes = async (req, res, next) => {
 
 const getNote = async (req, res, next) => {
   try {
+    if (!isValidId(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid note id' });
+    }
     const note = await Note.findOne({ _id: req.params.id, user: req.user._id });
     if (!note) {
       return res.status(404).json({ message: 'Note not found' });
@@ -85,13 +139,21 @@ const getNote = async (req, res, next) => {
 
 const updateNote = async (req, res, next) => {
   try {
+    if (!isValidId(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid note id' });
+    }
+    
     const { title, content } = req.body;
     const updateData = {};
     if (title && typeof title === 'string' && title.trim().length > 0) {
       updateData.title = title.trim();
     }
     if (content && typeof content === 'string' && content.trim().length > 0) {
-      updateData.content = content.trim();
+      const sanitizedContent = sanitizeContent(content);
+      if (!hasValidContent(sanitizedContent)) {
+        return res.status(400).json({ message: 'Please provide meaningful content' });
+      }
+      updateData.content = sanitizedContent;
     }
 
     if (Object.keys(updateData).length === 0) {
@@ -116,6 +178,9 @@ const updateNote = async (req, res, next) => {
 
 const deleteNote = async (req, res, next) => {
   try {
+    if (!isValidId(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid note id' });
+    }
     const note = await Note.findOneAndDelete({ _id: req.params.id, user: req.user._id });
     if (!note) {
       return res.status(404).json({ message: 'Note not found' });
