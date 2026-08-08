@@ -4,7 +4,6 @@ const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 
 // Load .env FIRST before importing routes
-
 dotenv.config();
 
 const connectDB = require('./src/config/db');
@@ -17,9 +16,8 @@ const pinoHttp = require('pino-http');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// CORS configuration - trim origins
+// CORS configuration
 const corsOptions = {
-  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : ['http://localhost:3000', 'http://localhost:5173'],
   origin: process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
     : ['http://localhost:3000', 'http://localhost:5173'],
@@ -31,28 +29,34 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(pinoHttp({ logger }));
+
+app.use(pinoHttp({
+  logger,
+  redact: {
+    paths: ['req.headers.authorization', 'req.headers.cookie'],
+    remove: true,
+  }
+}));
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/notes', noteRoutes);
 
-// Health check - lower log level to debug
+// Health check
 app.get('/api/health', (req, res) => {
   logger.debug('Health check endpoint called');
   res.status(200).json({ status: 'OK', message: 'Server is running' });
 });
 
 // 404 handler for unmatched routes
-
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
 });
 
-// Error handler (should be last)
+// Error handler 
 app.use(errorHandler);
 
-// Start server
+// Start server - ONLY ONE DECLARATION
 const startServer = async () => {
   try {
     await connectDB();
@@ -60,14 +64,6 @@ const startServer = async () => {
       logger.info(`Server is running on port ${PORT}`);
     });
 
-    // Graceful shutdown
-    const shutdown = async () => {
-      logger.info('Shutting down gracefully...');
-      server.close(async () => {
-        await connectDB.disconnect();
-        logger.info('Server closed');
-        process.exit(0);
-   
     server.on('error', (error) => {
       logger.error({ err: error }, 'Server error');
       process.exit(1);
@@ -92,7 +88,6 @@ const startServer = async () => {
     process.on('SIGINT', shutdown);
 
   } catch (error) {
-    
     logger.error({ err: error }, 'Failed to start server');
     process.exit(1);
   }
@@ -101,5 +96,6 @@ const startServer = async () => {
 if (require.main === module) {
   startServer();
 }
+
 
 module.exports = app;
