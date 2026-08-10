@@ -19,10 +19,11 @@ const noteSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
+      index: true, // Add index for query performance
     },
   },
   {
-    timestamps: true, 
+    timestamps: true,
   }
 );
 

@@ -75,8 +75,11 @@ const createNote = async (req, res, next) => {
 
 const getNotes = async (req, res, next) => {
   try {
+    // Pagination with validation
     const page = req.query.page === undefined ? 1 : Number(req.query.page);
     const limit = req.query.limit === undefined ? 10 : Number(req.query.limit);
+    
+   
     
     const MAX_PAGE = 1000;
     const MAX_LIMIT = 100;
@@ -92,6 +95,11 @@ const getNotes = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid pagination parameters' });
     }
     
+    // Calculate skip and ensure it's a safe integer
+    const skip = (page - 1) * limit;
+    if (!Number.isSafeInteger(skip) || skip < 0) {
+      return res.status(400).json({ message: 'Invalid pagination parameters' });
+    }
     const skip = (page - 1) * limit;
 
     const notes = await Note.find({ user: req.user._id })

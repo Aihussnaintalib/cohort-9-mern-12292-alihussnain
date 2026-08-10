@@ -1,6 +1,8 @@
 const User = require('../models/User');
 const { generateToken } = require('../utils/jwt');
 const logger = require('../config/logger');
+
+// Email validation - simple but effective
 const bcrypt = require('bcrypt');
 
 const DUMMY_HASH = process.env.DUMMY_BCRYPT_HASH;
@@ -35,6 +37,7 @@ const signup = async (req, res, next) => {
       return res.status(400).json({ message: 'Please provide a valid email' });
     }
 
+    // Normalize email to lowercase for database lookup
     const normalizedEmail = email.toLowerCase();
     const userExists = await User.findOne({ email: normalizedEmail });
     if (userExists) {
@@ -71,6 +74,14 @@ const login = async (req, res, next) => {
       return res.status(400).json({ message: 'Please provide a valid email' });
     }
 
+    // Normalize email to lowercase for database lookup
+    const normalizedEmail = email.toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail }).select('+password');
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
     const normalizedEmail = email.toLowerCase();
     const user = await User.findOne({ email: normalizedEmail }).select('+password');
     

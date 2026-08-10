@@ -1,3 +1,4 @@
+
 const jwt = require('jsonwebtoken');
 
 // Validate JWT_SECRET at module load
@@ -11,7 +12,8 @@ const generateToken = (id) => {
 };
 
 const verifyToken = (token) => {
-  return jwt.verify(token, JWT_SECRET);
+  // Explicitly restrict to HS256 algorithm
+  return jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
 };
 
 module.exports = { generateToken, verifyToken };
