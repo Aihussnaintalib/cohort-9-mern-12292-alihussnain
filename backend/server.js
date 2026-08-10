@@ -13,9 +13,6 @@ const errorHandler = require('./src/middleware/errorHandler');
 const logger = require('./src/config/logger');
 const pinoHttp = require('pino-http');
 
-// Load .env FIRST before importing routes
-dotenv.config();
-
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -56,10 +53,9 @@ app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
 });
 
-// Error handler 
+// Error handler (should be last)
 app.use(errorHandler);
 
-// Start server - ONLY ONE DECLARATION
 const startServer = async () => {
   try {
     await connectDB();
@@ -79,7 +75,6 @@ const startServer = async () => {
           await mongoose.disconnect();
           logger.info('MongoDB disconnected');
         } catch (error) {
-          logger.error(`Shutdown error: ${error.message}`);
           logger.error({ err: error }, 'Shutdown error');
         } finally {
           logger.info('Server closed');
