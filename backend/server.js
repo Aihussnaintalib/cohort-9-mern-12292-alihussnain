@@ -53,10 +53,9 @@ app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
 });
 
-// Error handler 
+// Error handler (should be last)
 app.use(errorHandler);
 
-// Start server - ONLY ONE DECLARATION
 const startServer = async () => {
   try {
     await connectDB();

@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const { generateToken } = require('../utils/jwt');
 const logger = require('../config/logger');
+const bcrypt = require('bcrypt');
 
 // Email validation - simple but effective
 const bcrypt = require('bcrypt');
@@ -30,14 +31,13 @@ const signup = async (req, res, next) => {
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Please provide name, email and password' });
     }
-    if (password.length < 6) {
+    if (typeof password !== 'string' || password.length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters' });
     }
     if (!validateEmail(email)) {
       return res.status(400).json({ message: 'Please provide a valid email' });
     }
 
-    // Normalize email to lowercase for database lookup
     const normalizedEmail = email.toLowerCase();
     const userExists = await User.findOne({ email: normalizedEmail });
     if (userExists) {
@@ -74,12 +74,18 @@ const login = async (req, res, next) => {
       return res.status(400).json({ message: 'Please provide a valid email' });
     }
 
-    // Normalize email to lowercase for database lookup
     const normalizedEmail = email.toLowerCase();
     const user = await User.findOne({ email: normalizedEmail }).select('+password');
-    if (!user) {
+    
+    // Timing attack prevention - always compare
+    const isMatch = user
+      ? await user.matchPassword(password)
+      : await bcrypt.compare(password, DUMMY_HASH);
+    
+    if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
+    if (!user) {
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
     const normalizedEmail = email.toLowerCase();

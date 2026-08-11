@@ -8,7 +8,12 @@ let mongoServer;
 before(async function() {
   mongoServer = await MongoMemoryServer.create();
   const uri = mongoServer.getUri();
-  await mongoose.connect(uri);
+  try {
+    await mongoose.connect(uri);
+  } catch (error) {
+    await mongoServer.stop();
+    throw error;
+  }
 });
 
 // After each test - clear all collections
@@ -21,6 +26,11 @@ afterEach(async function() {
 
 // After all tests - disconnect and stop server
 after(async function() {
-  await mongoose.disconnect();
-  await mongoServer.stop();
+  try {
+    await mongoose.disconnect();
+  } catch (error) {
+    console.error('Error disconnecting from MongoDB:', error);
+  } finally {
+    await mongoServer.stop();
+  }
 });

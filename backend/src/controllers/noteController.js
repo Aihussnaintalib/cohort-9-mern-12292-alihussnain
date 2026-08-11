@@ -1,5 +1,7 @@
 const Note = require('../models/Note');
 const mongoose = require('mongoose');
+
+const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 const sanitizeHtml = require('sanitize-html');
 
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
@@ -75,7 +77,6 @@ const createNote = async (req, res, next) => {
 
 const getNotes = async (req, res, next) => {
   try {
-    // Pagination with validation
     const page = req.query.page === undefined ? 1 : Number(req.query.page);
     const limit = req.query.limit === undefined ? 10 : Number(req.query.limit);
     
@@ -95,7 +96,6 @@ const getNotes = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid pagination parameters' });
     }
     
-    // Calculate skip and ensure it's a safe integer
     const skip = (page - 1) * limit;
     if (!Number.isSafeInteger(skip) || skip < 0) {
       return res.status(400).json({ message: 'Invalid pagination parameters' });
