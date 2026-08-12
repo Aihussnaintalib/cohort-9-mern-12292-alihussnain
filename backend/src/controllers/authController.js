@@ -14,7 +14,6 @@ const DUMMY_HASH = process.env.DUMMY_BCRYPT_HASH;
 // Dummy hash for timing attack prevention
 const DUMMY_HASH = '$2b$10$CwTycUXWue0Thq9StjUM0uJ8bQhO5UcpwjkYmMKz.fF6dqvz.Jd4W';
 
-// Email validation
 const validateEmail = (email) => {
   const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   return re.test(email);
@@ -31,7 +30,7 @@ const signup = async (req, res, next) => {
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Please provide name, email and password' });
     }
-    if (typeof password !== 'string' || password.length < 6) {
+    if (password.length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters' });
     }
     if (!validateEmail(email)) {
@@ -51,7 +50,6 @@ const signup = async (req, res, next) => {
       user: { id: user._id, name: user.name, email: user.email },
     });
   } catch (error) {
-    // Handle duplicate key error (E11000)
     if (error.code === 11000) {
       return res.status(400).json({ message: 'User already exists' });
     }
@@ -77,7 +75,6 @@ const login = async (req, res, next) => {
     const normalizedEmail = email.toLowerCase();
     const user = await User.findOne({ email: normalizedEmail }).select('+password');
     
-    // Timing attack prevention - always compare
     const isMatch = user
       ? await user.matchPassword(password)
       : await bcrypt.compare(password, DUMMY_HASH);
@@ -113,6 +110,7 @@ const login = async (req, res, next) => {
 };
 
 const logout = (req, res) => {
+  // TODO: Implement token revocation (PR #11 or later)
   // Token invalidation handled client-side for now
   res.status(200).json({ success: true, message: 'Logged out successfully' });
 };

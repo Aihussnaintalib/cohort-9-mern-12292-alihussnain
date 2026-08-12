@@ -4,33 +4,40 @@ const { MongoMemoryServer } = require('mongodb-memory-server');
 
 let mongoServer;
 
-// Before all tests - connect to in-memory database
 before(async function() {
-  mongoServer = await MongoMemoryServer.create();
-  const uri = mongoServer.getUri();
   try {
+    mongoServer = await MongoMemoryServer.create();
+    const uri = mongoServer.getUri();
     await mongoose.connect(uri);
   } catch (error) {
-    await mongoServer.stop();
+    if (mongoServer) {
+      await mongoServer.stop();
+    }
+    console.error('Failed to start test database:', error);
     throw error;
   }
 });
 
-// After each test - clear all collections
 afterEach(async function() {
-  const collections = mongoose.connection.collections;
-  for (const key in collections) {
-    await collections[key].deleteMany();
+  try {
+    const collections = mongoose.connection.collections;
+    for (const key in collections) {
+      await collections[key].deleteMany();
+    }
+  } catch (error) {
+    console.error('Failed to clear collections:', error);
+    throw error;
   }
 });
 
-// After all tests - disconnect and stop server
 after(async function() {
   try {
     await mongoose.disconnect();
   } catch (error) {
     console.error('Error disconnecting from MongoDB:', error);
   } finally {
-    await mongoServer.stop();
+    if (mongoServer) {
+      await mongoServer.stop();
+    }
   }
 });
