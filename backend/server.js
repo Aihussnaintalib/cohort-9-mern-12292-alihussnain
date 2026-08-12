@@ -29,6 +29,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 app.use(pinoHttp({
   logger,
   redact: {
@@ -55,7 +56,6 @@ app.use((req, res) => {
 // Error handler (should be last)
 app.use(errorHandler);
 
-// Start server
 const startServer = async () => {
   try {
     await connectDB();
@@ -95,5 +95,6 @@ const startServer = async () => {
 if (require.main === module) {
   startServer();
 }
+
 
 module.exports = app;
