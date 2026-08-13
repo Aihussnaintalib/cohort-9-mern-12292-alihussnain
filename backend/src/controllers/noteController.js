@@ -3,6 +3,9 @@ const mongoose = require('mongoose');
 const sanitizeHtml = require('sanitize-html');
 
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
+const sanitizeHtml = require('sanitize-html');
+
+const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 // Sanitize HTML content
 const sanitizeContent = (content) => {
@@ -39,6 +42,9 @@ const hasValidContent = (sanitized) => {
   const textContent = sanitized.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim();
   
   // Check ALL images for valid src
+const hasValidContent = (sanitized) => {
+  if (!sanitized) return false;
+  const textContent = sanitized.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim();
   const imgRegex = /<img[^>]*src=["']([^"']*)["']/g;
   let match;
   let hasValidImage = false;
@@ -50,6 +56,47 @@ const hasValidContent = (sanitized) => {
   }
   
   // Content is valid if it has meaningful text OR a valid image
+  return textContent.length > 0 || hasValidImage;
+};
+
+const sanitizeContent = (content) => {
+  return sanitizeHtml(content, {
+    allowedTags: [
+      'p', 'br', 'b', 'i', 'u', 's', 'strike',
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+      'ul', 'ol', 'li', 'blockquote', 'code',
+      'pre', 'a', 'img', 'strong', 'em',
+      'span', 'div', 'table', 'thead', 'tbody',
+      'tr', 'th', 'td'
+    ],
+    allowedAttributes: {
+      a: ['href', 'target'],
+      img: ['src', 'alt', 'width', 'height'],
+      '*': ['class', 'style']
+    },
+    allowedSchemes: ['http', 'https'],
+    allowedSchemesByTag: {
+      img: ['http', 'https', 'data']
+    },
+    allowedIframeHostnames: [],
+    transformTags: {
+      a: sanitizeHtml.simpleTransform('a', { target: '_blank' })
+    }
+  });
+};
+
+const hasValidContent = (sanitized) => {
+  if (!sanitized) return false;
+  const textContent = sanitized.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim();
+  const imgRegex = /<img[^>]*src=["']([^"']*)["']/g;
+  let match;
+  let hasValidImage = false;
+  while ((match = imgRegex.exec(sanitized)) !== null) {
+    if (match[1] && match[1].trim().length > 0) {
+      hasValidImage = true;
+      break;
+    }
+  }
   return textContent.length > 0 || hasValidImage;
 };
 
@@ -87,6 +134,8 @@ const getNotes = async (req, res, next) => {
     const page = req.query.page === undefined ? 1 : Number(req.query.page);
     const limit = req.query.limit === undefined ? 10 : Number(req.query.limit);
     
+   
+    
     const MAX_PAGE = 1000;
     const MAX_LIMIT = 100;
     
@@ -105,6 +154,7 @@ const getNotes = async (req, res, next) => {
     if (!Number.isSafeInteger(skip) || skip < 0) {
       return res.status(400).json({ message: 'Invalid pagination parameters' });
     }
+    const skip = (page - 1) * limit;
 
     const notes = await Note.find({ user: req.user._id })
       .sort({ createdAt: -1 })
