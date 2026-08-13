@@ -37,21 +37,12 @@ const sanitizeNoteContent = (html) => {
 // Check if content has meaningful text or embeds
 const hasValidContent = (html) => {
   if (!html) return false;
-  
-  // Sanitize first to remove dangerous content
   const sanitized = sanitizeNoteContent(html);
-  
-  // Use DOMParser to extract meaningful content
   const parser = new DOMParser();
   const doc = parser.parseFromString(sanitized, 'text/html');
   const body = doc.body;
-  
-  // Check for text content (excluding whitespace and non-breaking spaces)
   const text = body.textContent?.replace(/\u00a0/g, '').trim();
-  
-  // Check for images or other embeds
   const hasEmbed = body.querySelector('img') !== null;
-  
   return Boolean(text || hasEmbed);
 };
 
@@ -63,7 +54,6 @@ const Dashboard = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // Memoize sanitized notes to avoid re-sanitizing on every render
   const sanitizedNotes = useMemo(() => {
     return notes.map(note => ({
       ...note,
@@ -130,7 +120,6 @@ const Dashboard = () => {
       setContent('');
       setError('');
       
-      // Refetch notes after create
       const response = await axios.get(`${API_URL}/api/notes`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -154,7 +143,6 @@ const Dashboard = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      // Refetch notes after delete
       const response = await axios.get(`${API_URL}/api/notes`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -173,6 +161,11 @@ const Dashboard = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     navigate('/login');
+  };
+
+  // ✅ Edit Note Function
+  const editNote = (id) => {
+    navigate(`/edit-note/${id}`);
   };
 
   if (loading) {
@@ -219,9 +212,20 @@ const Dashboard = () => {
                 dangerouslySetInnerHTML={{ __html: note.sanitizedContent }} 
               />
               <small>{new Date(note.createdAt).toLocaleDateString()}</small>
-              <button className="delete-btn" onClick={() => deleteNote(note._id)}>
-                Delete
-              </button>
+              <div className="note-actions">
+                <button 
+                  className="edit-btn" 
+                  onClick={() => editNote(note._id)}
+                >
+                  ✏️ Edit
+                </button>
+                <button 
+                  className="delete-btn" 
+                  onClick={() => deleteNote(note._id)}
+                >
+                  🗑️ Delete
+                </button>
+              </div>
             </div>
           ))
         )}
