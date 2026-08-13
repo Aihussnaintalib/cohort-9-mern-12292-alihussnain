@@ -1,10 +1,50 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import NoteEditor from '../components/notes/NoteEditor';
+import sanitizeHtml from 'sanitize-html';
 
-// Use environment variable or fallback to localhost
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+// Strict allowlist sanitizer
+const sanitizeNoteContent = (html) => {
+  if (!html) return '';
+  return sanitizeHtml(html, {
+    allowedTags: [
+      'p', 'br', 'b', 'i', 'u', 's', 'strike',
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+      'ul', 'ol', 'li', 'blockquote', 'code',
+      'pre', 'a', 'img', 'strong', 'em',
+      'span', 'div', 'table', 'thead', 'tbody',
+      'tr', 'th', 'td'
+    ],
+    allowedAttributes: {
+      a: ['href', 'target'],
+      img: ['src', 'alt', 'width', 'height'],
+      '*': ['class', 'style']
+    },
+    allowedSchemes: ['http', 'https'],
+    allowedSchemesByTag: {
+      img: ['http', 'https', 'data']
+    },
+    allowedIframeHostnames: [],
+    transformTags: {
+      a: sanitizeHtml.simpleTransform('a', { target: '_blank' })
+    }
+  });
+};
+
+// Check if content has meaningful text or embeds
+const hasValidContent = (html) => {
+  if (!html) return false;
+  const sanitized = sanitizeNoteContent(html);
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(sanitized, 'text/html');
+  const body = doc.body;
+  const text = body.textContent?.replace(/\u00a0/g, '').trim();
+  const hasEmbed = body.querySelector('img') !== null;
+  return Boolean(text || hasEmbed);
+};
 
 const Dashboard = () => {
   const [notes, setNotes] = useState([]);
@@ -14,7 +54,13 @@ const Dashboard = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // Helper to handle 401 responses
+  const sanitizedNotes = useMemo(() => {
+    return notes.map(note => ({
+      ...note,
+      sanitizedContent: sanitizeNoteContent(note.content)
+    }));
+  }, [notes]);
+
   const handleUnauthorized = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -54,13 +100,20 @@ const Dashboard = () => {
     e.preventDefault();
     const token = localStorage.getItem('token');
 
-    if (!title.trim() || !content.trim()) {
-      setError('Please provide title and content');
+    if (!title.trim()) {
+      setError('Please provide a title');
+      return;
+    }
+    if (!hasValidContent(content)) {
+      setError('Please provide meaningful content');
       return;
     }
 
     try {
-      await axios.post(`${API_URL}/api/notes`, { title, content }, {
+      await axios.post(`${API_URL}/api/notes`, { 
+        title: title.trim(), 
+        content 
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTitle('');
@@ -110,6 +163,11 @@ const Dashboard = () => {
     navigate('/login');
   };
 
+  // ✅ Edit Note Function
+  const editNote = (id) => {
+    navigate(`/edit-note/${id}`);
+  };
+
   if (loading) {
     return <div className="loading">Loading notes...</div>;
   }
@@ -138,27 +196,36 @@ const Dashboard = () => {
           onChange={(e) => setTitle(e.target.value)}
           required
         />
-        <textarea
-          placeholder="Note Content"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          required
-        />
+        <NoteEditor value={content} onChange={setContent} />
         <button type="submit">Add Note</button>
       </form>
 
       <div className="notes-grid">
-        {notes.length === 0 ? (
+        {sanitizedNotes.length === 0 ? (
           <p className="no-notes">No notes yet. Create your first note!</p>
         ) : (
-          notes.map((note) => (
+          sanitizedNotes.map((note) => (
             <div key={note._id} className="note-card">
               <h3>{note.title}</h3>
-              <p>{note.content}</p>
+              <div 
+                className="note-content" 
+                dangerouslySetInnerHTML={{ __html: note.sanitizedContent }} 
+              />
               <small>{new Date(note.createdAt).toLocaleDateString()}</small>
-              <button className="delete-btn" onClick={() => deleteNote(note._id)}>
-                Delete
-              </button>
+              <div className="note-actions">
+                <button 
+                  className="edit-btn" 
+                  onClick={() => editNote(note._id)}
+                >
+                  ✏️ Edit
+                </button>
+                <button 
+                  className="delete-btn" 
+                  onClick={() => deleteNote(note._id)}
+                >
+                  🗑️ Delete
+                </button>
+              </div>
             </div>
           ))
         )}

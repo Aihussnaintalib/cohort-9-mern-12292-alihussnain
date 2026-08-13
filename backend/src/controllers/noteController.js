@@ -1,10 +1,52 @@
 const Note = require('../models/Note');
 const mongoose = require('mongoose');
+const sanitizeHtml = require('sanitize-html');
 
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 const sanitizeHtml = require('sanitize-html');
 
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+const sanitizeContent = (content) => {
+  return sanitizeHtml(content, {
+    allowedTags: [
+      'p', 'br', 'b', 'i', 'u', 's', 'strike',
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+      'ul', 'ol', 'li', 'blockquote', 'code',
+      'pre', 'a', 'img', 'strong', 'em',
+      'span', 'div', 'table', 'thead', 'tbody',
+      'tr', 'th', 'td'
+    ],
+    allowedAttributes: {
+      a: ['href', 'target'],
+      img: ['src', 'alt', 'width', 'height'],
+      '*': ['class', 'style']
+    },
+    allowedSchemes: ['http', 'https'],
+    allowedSchemesByTag: {
+      img: ['http', 'https', 'data']
+    },
+    allowedIframeHostnames: [],
+    transformTags: {
+      a: sanitizeHtml.simpleTransform('a', { target: '_blank' })
+    }
+  });
+};
+
+const hasValidContent = (sanitized) => {
+  if (!sanitized) return false;
+  const textContent = sanitized.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim();
+  const imgRegex = /<img[^>]*src=["']([^"']*)["']/g;
+  let match;
+  let hasValidImage = false;
+  while ((match = imgRegex.exec(sanitized)) !== null) {
+    if (match[1] && match[1].trim().length > 0) {
+      hasValidImage = true;
+      break;
+    }
+  }
+  return textContent.length > 0 || hasValidImage;
+};
 
 const sanitizeContent = (content) => {
   return sanitizeHtml(content, {
