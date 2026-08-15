@@ -38,6 +38,7 @@
 .auth-container button {
   width: 100%;
   padding: 12px;
+  background: #1b5e20;
   background: #4a6cf7;
   color: white;
   border: none;
@@ -60,6 +61,10 @@
 }
 
 .error {
+  color: #c62828;
+  padding: 10px;
+  background: #ffebee;
+  border-radius: 4px;
   color: #c0392b;
   padding: 12px;
   background: #fde8e8;
@@ -141,6 +146,7 @@
 }
 
 .profile-btn {
+  background: #0d47a1;
   background: #4a6cf7;
   color: white;
 }
@@ -198,6 +204,9 @@
   box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.1);
 }
 
+.note-form button {
+  padding: 10px 30px;
+  background: #1b5e20;
 .note-form .ql-container {
   border-radius: 8px;
   border: 2px solid #e9ecef;
@@ -335,6 +344,10 @@
   margin-bottom: 12px;
 }
 
+.note-card .delete-btn {
+  padding: 5px 15px;
+  background: #b71c1c;
+  color: white;
 /* Note Actions */
 .note-actions {
   display: flex;
@@ -390,6 +403,12 @@
   color: #8e8ea0;
 }
 
+.error-message {
+  color: #c62828;
+  padding: 10px;
+  background: #ffebee;
+  border-radius: 4px;
+  margin: 10px 0;
 /* ============================================
    Profile Page
    ============================================ */
@@ -426,6 +445,40 @@
   color: #555;
 }
 
+/* Profile styles */
+.profile-container {
+  max-width: 600px;
+  margin: 50px auto;
+  padding: 30px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  background: white;
+}
+
+.profile-container h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.profile-card {
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  margin: 20px 0;
+  text-align: left;
+}
+
+.profile-card p {
+  margin: 10px 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.profile-card strong {
+  color: #555;
+}
+
 .profile-actions {
   display: flex;
   gap: 10px;
@@ -439,6 +492,18 @@
   border-radius: 8px;
   cursor: pointer;
   font-size: 16px;
+}
+
+/* Shared logout button */
+.logout-btn {
+  background: #b71c1c;
+  color: white;
+}
+
+.back-btn {
+  background: #0d47a1;
+  color: white;
+}
   font-weight: 600;
 }
 
