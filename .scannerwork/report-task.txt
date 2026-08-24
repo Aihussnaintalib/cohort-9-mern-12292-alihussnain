@@ -1,0 +1,6 @@
+projectKey=Cohort-9-MERN-Notes-App
+serverUrl=http://localhost:9000
+serverVersion=26.8.0.126808
+dashboardUrl=http://localhost:9000/dashboard?id=Cohort-9-MERN-Notes-App
+ceTaskId=a41cc10a-f081-484e-b766-d5ffb2b76ed3
+ceTaskUrl=http://localhost:9000/api/ce/task?id=a41cc10a-f081-484e-b766-d5ffb2b76ed3
