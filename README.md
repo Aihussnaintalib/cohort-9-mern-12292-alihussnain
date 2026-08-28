@@ -52,3 +52,6 @@ A full-stack notes application built with the MERN (MongoDB, Express.js, React.j
 
 git clone https://github.com/Aihussnaintalib/cohort-9-mern-12292-alihussnain.git
 cd cohort-9-mern-12292-alihussnain
+# cohort-9-mern-12292-alihussnain
+Cohort 9 — MERN (NodeJS+ReactJS) assignment for Alihussnain 
+React frontend for the Notes App with rich text editing.

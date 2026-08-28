@@ -1,0 +1,1 @@
+React frontend for the Notes App with rich text editing.
